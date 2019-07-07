@@ -1,7 +1,7 @@
 # {{{ -- meta
 
-HOSTARCH  := $(shell uname -m | sed "s_armv7l_armhf_")# x86_64# on travis.ci
-ARCH      := $(shell uname -m | sed "s_armv7l_armhf_")# armhf/x86_64 auto-detect on build and run
+HOSTARCH  := $(shell uname -m | sed "s_armv6l_armhf_")# x86_64# on travis.ci
+ARCH      := $(shell uname -m | sed "s_armv6l_armhf_")# armhf/x86_64 auto-detect on build and run
 OPSYS     := alpine
 SHCOMMAND := /bin/bash
 SVCNAME   := rsyslog
@@ -42,9 +42,7 @@ FWD_PROTOCOL    := relp
 BUILDFLAGS := --rm --force-rm --compress \
 	-f $(CURDIR)/Dockerfile_$(ARCH) \
 	-t $(IMAGETAG) \
-	--build-arg ARCH=$(ARCH) \
-	--build-arg DOCKERSRC=$(DOCKERSRC) \
-	--build-arg USERNAME=$(USERNAME) \
+	--build-arg DOCKERSRC=$(USERNAME)/$(DOCKERSRC):$(ARCH) \
 	--build-arg PUID=$(PUID) \
 	--build-arg PGID=$(PGID) \
 	--build-arg http_proxy=$(http_proxy) \
@@ -76,7 +74,6 @@ NAMEFLAGS  := --name docker_$(CNTNAME) \
 
 OTHERFLAGS := -v /etc/hosts:/etc/hosts:ro -v /etc/localtime:/etc/localtime:ro -e TZ=Asia/Kolkata
 PORTFLAGS  := -p 2514:2514 -p 514:514/tcp -p 514:514/udp
-PROXYFLAGS :=
 
 RUNFLAGS   := -c 256 -m 256m \
 	-e PGID=$(PGID) -e PUID=$(PUID) \
@@ -98,7 +95,7 @@ all : run
 build :
 	echo "Building for $(ARCH) from $(HOSTARCH)";
 	if [ "$(ARCH)" != "$(HOSTARCH)" ]; then make regbinfmt ; fi;
-	docker build $(BUILDFLAGS) $(CACHEFLAGS) $(PROXYFLAGS) .
+	docker build $(BUILDFLAGS) $(CACHEFLAGS) .
 
 clean :
 	docker images | awk '(NR>1) && ($$2!~/none/) {print $$1":"$$2}' | grep "$(USERNAME)/$(DOCKEREPO)" | xargs -n1 docker rmi
@@ -110,7 +107,7 @@ pull :
 	docker pull $(IMAGETAG)
 
 push :
-	docker push $(IMAGETAG); \
+	docker push $(IMAGETAG);
 	if [ "$(ARCH)" = "$(HOSTARCH)" ]; \
 		then \
 		LATESTTAG=$$(echo $(IMAGETAG) | sed 's/:$(ARCH)/:latest/'); \
@@ -121,7 +118,7 @@ push :
 restart :
 	docker ps -a | grep 'docker_$(CNTNAME)' -q && docker restart docker_$(CNTNAME) || echo "Service not running.";
 
-rm : stop
+rm :
 	docker rm -f docker_$(CNTNAME)
 
 run :
