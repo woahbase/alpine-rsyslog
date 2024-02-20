@@ -1,0 +1,50 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+RSYSLOG_CONF="${RSYSLOG_CONF:-/etc/rsyslog.conf}";
+RSYSLOG_CONFD="${RSYSLOG_CONFD:-/etc/rsyslog.d}";
+RSYSLOG_LOGDIR="${RSYSLOG_LOGDIR:-/var/log}";
+RSYSLOG_WORKDIR="${RSYSLOG_WORKDIR:-/var/lib/rsyslog}";
+RSYSLOG_SPOOLDIR="${RSYSLOG_SPOOLDIR:-/var/spool/rsyslog}";
+RSYSLOG_PROFILE="${RSYSLOG_PROFILE:-default}";
+# can either be
+# default   - config that comes with package
+# forwarder - forwards to remote rsyslog server
+# listener  - listens and aggregates logs from remote servers
+
+mkdir -p \
+    $(dirname $RSYSLOG_CONF) \
+    ${RSYSLOG_CONFD} \
+    ${RSYSLOG_LOGDIR} \
+    ${RSYSLOG_WORKDIR} \
+    ${RSYSLOG_SPOOLDIR} \
+    ;
+
+# ensure rsyslog conf exists
+if [ ! -f "${RSYSLOG_CONF}" ];
+then
+    cp /defaults/rsyslog.conf.${RSYSLOG_PROFILE} ${RSYSLOG_CONF};
+fi;
+
+# extra dirs for logs, only used if using one of non-default configs provided
+# if you're using a custom configurations, make your own logdirs
+if [ "${RSYSLOG_PROFILE}" = "forwarder" ] || [ "${RSYSLOG_PROFILE}" = "listener" ];
+then
+    mkdir -p \
+        ${RSYSLOG_LOGDIR}/local/container \
+        ${RSYSLOG_LOGDIR}/local/host \
+        ${RSYSLOG_LOGDIR}/remote \
+        ;
+fi;
+
+chown -R ${S6_USER:-alpine}:adm \
+    ${RSYSLOG_CONFD} \
+    ${RSYSLOG_WORKDIR} \
+    ${RSYSLOG_SPOOLDIR} \
+    ${RSYSLOG_LOGDIR} \
+    ;
+
+chown ${S6_USER:-alpine}:adm \
+    $(dirname $RSYSLOG_CONF) \
+    ${RSYSLOG_CONF} \
+    ;

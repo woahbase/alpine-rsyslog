@@ -1,0 +1,30 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+LOGROTATE_CONF="${LOGROTATE_CONF:-/etc/logrotate.conf}";
+LOGROTATE_CONFD="${LOGROTATE_CONFD:-/etc/logrotate.d}";
+LOGROTATE_CONF_RSYSLOG="${LOGROTATE_CONF_RSYSLOG:-$LOGROTATE_CONFD/rsyslog}";
+LOGROTATE_PERIOD="${LOGROTATE_PERIOD:-daily}"; # can be either 15min | daily | hourly | monthly | weekly
+
+mkdir -p \
+    $(dirname $LOGROTATE_CONF) \
+    ${LOGROTATE_CONFD} \
+    ;
+
+# ensure logrotate conf exists
+if [ ! -f "${LOGROTATE_CONF}" ];
+then
+    cp /defaults/logrotate.conf ${LOGROTATE_CONF};
+fi;
+
+# ensure logrotate conf for rsyslog exists
+if [ ! -f "${LOGROTATE_CONF_RSYSLOG}" ];
+then
+    cp /defaults/rsyslog.logrotate ${LOGROTATE_CONF_RSYSLOG};
+fi;
+
+if [ -z "${SKIP_CRON}" ] \
+&& [ $(find /etc/periodic -type f | grep 'logrotate' | wc -l) -eq 0 ];
+then
+    cp /defaults/logrotate.cron /etc/periodic/${LOGROTATE_PERIOD:-daily}/logrotate;
+fi;

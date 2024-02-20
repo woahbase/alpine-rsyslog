@@ -1,0 +1,10 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+RSYSLOG_ARGS="${RSYSLOG_ARGS:- -n -f}";
+RSYSLOG_CONF="${RSYSLOG_CONF:-/etc/rsyslog.conf}";
+
+echo "Using ${RSYSLOG_CONF} for configuration...";
+
+exec \
+    rsyslogd ${RSYSLOG_ARGS} ${RSYSLOG_CONF}

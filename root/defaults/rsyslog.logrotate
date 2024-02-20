@@ -1,0 +1,20 @@
+/var/log/messages
+/var/log/*.log
+/var/log/*/*.log
+/var/log/*/*/*.log
+{
+  compress
+  copytruncate
+  delaycompress
+  missingok
+  notifempty
+  rotate 4
+  postrotate
+        /usr/bin/killall -HUP rsyslogd
+  endscript
+  sharedscripts
+  size 4M
+  weekly
+}
+
+
