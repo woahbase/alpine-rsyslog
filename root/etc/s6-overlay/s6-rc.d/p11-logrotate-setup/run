@@ -1,11 +1,14 @@
 #!/usr/bin/with-contenv bash
 set -e
 
+vecho () { if [ "${S6_VERBOSITY:-1}" -gt 0 ]; then echo "[$0] $@"; fi; }
+
 LOGROTATE_CONF="${LOGROTATE_CONF:-/etc/logrotate.conf}";
 LOGROTATE_CONFD="${LOGROTATE_CONFD:-/etc/logrotate.d}";
 LOGROTATE_CONF_RSYSLOG="${LOGROTATE_CONF_RSYSLOG:-$LOGROTATE_CONFD/rsyslog}";
 LOGROTATE_PERIOD="${LOGROTATE_PERIOD:-daily}"; # can be either 15min | daily | hourly | monthly | weekly
 
+vecho "Ensure configuration directories exist.";
 mkdir -p \
     $(dirname $LOGROTATE_CONF) \
     ${LOGROTATE_CONFD} \
@@ -14,17 +17,22 @@ mkdir -p \
 # ensure logrotate conf exists
 if [ ! -f "${LOGROTATE_CONF}" ];
 then
+    vecho "Setting up logrotate configurations at ${LOGROTATE_CONF}.";
     cp /defaults/logrotate.conf ${LOGROTATE_CONF};
 fi;
 
 # ensure logrotate conf for rsyslog exists
-if [ ! -f "${LOGROTATE_CONF_RSYSLOG}" ];
+# skip if using single logrotate conf with all configurations
+if [ -z "${LOGROTATE_SKIP_CONF_RSYSLOG}" ] \
+&& [ ! -f "${LOGROTATE_CONF_RSYSLOG}" ];
 then
+    vecho "Setting up logrotate configurations for rsyslog at ${LOGROTATE_CONF_RSYSLOG}.";
     cp /defaults/rsyslog.logrotate ${LOGROTATE_CONF_RSYSLOG};
 fi;
 
 if [ -z "${SKIP_CRON}" ] \
 && [ $(find /etc/periodic -type f | grep 'logrotate' | wc -l) -eq 0 ];
 then
+    vecho "Setting up ${LOGROTATE_PERIOD:-daily} cron configurations for logrotate.";
     cp /defaults/logrotate.cron /etc/periodic/${LOGROTATE_PERIOD:-daily}/logrotate;
 fi;

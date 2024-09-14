@@ -1,6 +1,8 @@
 #!/usr/bin/with-contenv bash
 set -e
 
+vecho () { if [ "${S6_VERBOSITY:-1}" -gt 0 ]; then echo "[$0] $@"; fi; }
+
 RSYSLOG_CONF="${RSYSLOG_CONF:-/etc/rsyslog.conf}";
 RSYSLOG_CONFD="${RSYSLOG_CONFD:-/etc/rsyslog.d}";
 RSYSLOG_LOGDIR="${RSYSLOG_LOGDIR:-/var/log}";
@@ -12,6 +14,7 @@ RSYSLOG_PROFILE="${RSYSLOG_PROFILE:-default}";
 # forwarder - forwards to remote rsyslog server
 # listener  - listens and aggregates logs from remote servers
 
+vecho "Ensure configuration directories exist.";
 mkdir -p \
     $(dirname $RSYSLOG_CONF) \
     ${RSYSLOG_CONFD} \
@@ -23,6 +26,7 @@ mkdir -p \
 # ensure rsyslog conf exists
 if [ ! -f "${RSYSLOG_CONF}" ];
 then
+    vecho "Setting up ${RSYSLOG_PROFILE} configurations at ${RSYSLOG_CONF}.";
     cp /defaults/rsyslog.conf.${RSYSLOG_PROFILE} ${RSYSLOG_CONF};
 fi;
 
@@ -30,6 +34,7 @@ fi;
 # if you're using a custom configurations, make your own logdirs
 if [ "${RSYSLOG_PROFILE}" = "forwarder" ] || [ "${RSYSLOG_PROFILE}" = "listener" ];
 then
+    vecho "Ensure custom directories for ${RSYSLOG_PROFILE} for exist.";
     mkdir -p \
         ${RSYSLOG_LOGDIR}/local/container \
         ${RSYSLOG_LOGDIR}/local/host \
@@ -37,6 +42,7 @@ then
         ;
 fi;
 
+vecho "Fixing permissions.";
 chown -R ${S6_USER:-alpine}:adm \
     ${RSYSLOG_CONFD} \
     ${RSYSLOG_WORKDIR} \
