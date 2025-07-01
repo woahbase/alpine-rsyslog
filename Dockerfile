@@ -13,6 +13,7 @@ RUN set -xe \
         rsyslog \
         # rsyslog-crypto \
         # rsyslog-http \
+        rsyslog-imdocker \
         rsyslog-tls \
         rsyslog-relp \
         rsyslog-mmjsonparse \

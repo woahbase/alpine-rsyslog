@@ -42,15 +42,19 @@ then
         ;
 fi;
 
-vecho "Fixing permissions.";
-chown -R ${S6_USER:-alpine}:adm \
-    ${RSYSLOG_CONFD} \
-    ${RSYSLOG_WORKDIR} \
-    ${RSYSLOG_SPOOLDIR} \
-    ${RSYSLOG_LOGDIR} \
-    ;
+if [ -z "${RSYSLOG_SKIP_PERMFIX}" ] \
+&& [ "X${EUID}" == "X0" ]; # requires root
+then
+    vecho "Fixing permissions.";
+    chown -R ${S6_USER:-rsyslog}:${RSYSLOG_GROUP:-adm} \
+        ${RSYSLOG_CONFD} \
+        ${RSYSLOG_WORKDIR} \
+        ${RSYSLOG_SPOOLDIR} \
+        ${RSYSLOG_LOGDIR} \
+        ;
 
-chown ${S6_USER:-alpine}:adm \
-    $(dirname $RSYSLOG_CONF) \
-    ${RSYSLOG_CONF} \
-    ;
+    chown ${S6_USER:-rsyslog}:${RSYSLOG_GROUP:-adm} \
+        $(dirname $RSYSLOG_CONF) \
+        ${RSYSLOG_CONF} \
+        ;
+fi;
